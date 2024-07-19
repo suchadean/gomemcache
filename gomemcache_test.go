@@ -69,7 +69,11 @@ func TestGetValue(t *testing.T) {
 			assert.Equal(t, true, actualExists)
 			assert.Equal(t, tt.expected, actualGet)
 
-			cache.DeleteKey(tt.key)
+			delErr := cache.DeleteKey(tt.key)
+			if delErr != nil {
+				assert.Fail(t, "unexpected error thrown", delErr.Error())
+			}
+
 			actualNotExists := cache.KeyExists(tt.key)
 			assert.Equal(t, false, actualNotExists)
 		})

@@ -18,8 +18,8 @@ type CacheInterface interface {
 	KeyExists(key string) bool
 
 	// DeleteKey removes the entry regarding specified key from the cache
-	// If the specified key does not exist DeleteKey is a no-op
-	DeleteKey(key string)
+	// If the specified key does not exist DeleteKey returns an error
+	DeleteKey(key string) error
 }
 
 // MemCache simple in-memory cache
@@ -85,11 +85,17 @@ func (m *MemCache) KeyExists(key string) bool {
 }
 
 // DeleteKey removes the entry regarding specified key from the cache
-// If the specified key does not exist DeleteKey is a no-op
-func (m *MemCache) DeleteKey(key string) {
+// If the specified key does not exist DeleteKey returns an error
+func (m *MemCache) DeleteKey(key string) error {
+	if !m.KeyExists(key) {
+		return fmt.Errorf("key %s does not exist", key)
+	}
+
 	// Acquire write lock to ensure concurrent write safety
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
 	delete(m.data, key)
+
+	return nil
 }
