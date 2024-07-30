@@ -1,6 +1,7 @@
 package gomemcache
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 	"time"
@@ -16,6 +17,10 @@ type CacheInterface interface {
 
 	// KeyExists returns true if the specified key exists in cache otherwise false
 	KeyExists(key string) bool
+
+	// ValueExists returns true if the specified value is already assigned to a key in cache otherwise false
+	// If the specified value is assigned to a key return the assigned key for provided value as secondary return
+	ValueExists(value []byte) (bool, string)
 
 	// DeleteKey removes the entry regarding specified key from the cache
 	// If the specified key does not exist DeleteKey returns an error
@@ -82,6 +87,22 @@ func (m *MemCache) KeyExists(key string) bool {
 	_, ok := m.data[key]
 
 	return ok
+}
+
+// ValueExists returns true if the specified value is already assigned to a key in cache otherwise false
+// If the specified value is assigned to a key return the assigned key for provided value as secondary return
+func (m *MemCache) ValueExists(value []byte) (bool, string) {
+	// Acquire read lock to ensure concurrent retrieval safety
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+
+	for mapKey := range m.data {
+		if bytes.Equal(m.data[mapKey], value) {
+			return true, mapKey
+		}
+	}
+
+	return false, ""
 }
 
 // DeleteKey removes the entry regarding specified key from the cache
